@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AccountTypeEnum {
+  CASH
+  BANK
+  CARD
+  OTHER
+}
+
+enum CategoryTypeEnum {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionTypeEnum {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  currency     String   @default("USD")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  accounts     Account[]
+  categories   Category[]
+  transactions Transaction[]
+  budgets      Budget[]
+}
+
+model Account {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  type      AccountTypeEnum
+  currency  String          @default("USD")
+  archived  Boolean         @default(false)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  transactions Transaction[] @relation("AccountTx")
+  transfersIn  Transaction[] @relation("TransferIn")
+}
+
+model Category {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  type      CategoryTypeEnum
+  color     String?
+  icon      String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  transactions Transaction[]
+  budgets      Budget[]
+}
+
+model Transaction {
+  id          String              @id @default(cuid())
+  userId      String
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId   String
+  account     Account             @relation("AccountTx", fields: [accountId], references: [id], onDelete: Cascade)
+  toAccountId String?
+  toAccount   Account?            @relation("TransferIn", fields: [toAccountId], references: [id], onDelete: SetNull)
+  categoryId  String?
+  category    Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  amount      Decimal             @db.Decimal(14, 2)
+  type        TransactionTypeEnum
+  date        DateTime
+  notes       String?
+  tags        String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model Budget {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  year        Int
+  month       Int
+  limitAmount Decimal  @db.Decimal(14, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, categoryId, year, month])
+}
