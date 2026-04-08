@@ -43,6 +43,17 @@ export function TransactionsPanel({ currency }: { currency: string }) {
 
   const pageSize = 15;
 
+  const loadLookups = useCallback(async () => {
+    const [a, c] = await Promise.all([
+      fetch("/api/accounts", { credentials: "include" }),
+      fetch("/api/categories", { credentials: "include" }),
+    ]);
+    const aj = await a.json();
+    const cj = await c.json();
+    if (a.ok) setAccounts(aj);
+    if (c.ok) setCategories(cj);
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams();
@@ -68,17 +79,9 @@ export function TransactionsPanel({ currency }: { currency: string }) {
   }, [load]);
 
   useEffect(() => {
-    void (async () => {
-      const [a, c] = await Promise.all([
-        fetch("/api/accounts", { credentials: "include" }),
-        fetch("/api/categories", { credentials: "include" }),
-      ]);
-      const aj = await a.json();
-      const cj = await c.json();
-      if (a.ok) setAccounts(aj);
-      if (c.ok) setCategories(cj);
-    })();
-  }, []);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async list fetch
+    void loadLookups();
+  }, [loadLookups]);
 
   const fmt = useMemo(
     () => (n: number) =>
@@ -278,6 +281,7 @@ export function TransactionsPanel({ currency }: { currency: string }) {
           accounts={accounts}
           categories={categories}
           initial={editing}
+          onLookupsChanged={loadLookups}
           onClose={() => setModalOpen(false)}
           onSaved={() => {
             setModalOpen(false);
@@ -294,6 +298,7 @@ function TransactionModal({
   accounts,
   categories,
   initial,
+  onLookupsChanged,
   onClose,
   onSaved,
 }: {
@@ -301,9 +306,12 @@ function TransactionModal({
   accounts: AccountOpt[];
   categories: CategoryOpt[];
   initial: Tx | null;
+  onLookupsChanged: () => Promise<void> | void;
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const ADD_ACCOUNT_VALUE = "__add_account__";
+  const ADD_CATEGORY_VALUE = "__add_category__";
   const [type, setType] = useState<"INCOME" | "EXPENSE" | "TRANSFER">(initial?.type ?? "EXPENSE");
   const [accountId, setAccountId] = useState(initial?.account.id ?? accounts[0]?.id ?? "");
   const [toAccountId, setToAccountId] = useState(initial?.toAccount?.id ?? "");
@@ -316,10 +324,104 @@ function TransactionModal({
   const [tags, setTags] = useState(initial?.tags ?? "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [addingAccount, setAddingAccount] = useState(false);
+  const [addingCategory, setAddingCategory] = useState(false);
 
   const filteredCategories = categories.filter((c) =>
     type === "INCOME" ? c.type === "INCOME" : type === "EXPENSE" ? c.type === "EXPENSE" : false,
   );
+
+  async function createAccount() {
+    if (addingAccount) return null;
+
+    const name = window.prompt("New account name");
+    if (!name || !name.trim()) return null;
+
+    const typeInput = window
+      .prompt("Account type: CASH, BANK, CARD, or OTHER", "BANK")
+      ?.trim()
+      .toUpperCase();
+    const accountType =
+      typeInput === "CASH" || typeInput === "BANK" || typeInput === "CARD" || typeInput === "OTHER"
+        ? typeInput
+        : "BANK";
+
+    setAddingAccount(true);
+    setError(null);
+    const res = await fetch("/api/accounts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        name: name.trim(),
+        type: accountType,
+        currency,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setAddingAccount(false);
+
+    if (!res.ok) {
+      setError(typeof data.error === "string" ? data.error : "Could not add account.");
+      return null;
+    }
+
+    await onLookupsChanged();
+    return typeof data.id === "string" ? data.id : null;
+  }
+
+  async function handleAccountSelect(value: string, field: "from" | "to") {
+    if (value !== ADD_ACCOUNT_VALUE) {
+      if (field === "from") setAccountId(value);
+      else setToAccountId(value);
+      return;
+    }
+
+    const newId = await createAccount();
+    if (!newId) return;
+    if (field === "from") setAccountId(newId);
+    else setToAccountId(newId);
+  }
+
+  async function createCategory() {
+    if (addingCategory || type === "TRANSFER") return null;
+
+    const name = window.prompt("New category name");
+    if (!name || !name.trim()) return null;
+
+    setAddingCategory(true);
+    setError(null);
+    const res = await fetch("/api/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        name: name.trim(),
+        type,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setAddingCategory(false);
+
+    if (!res.ok) {
+      setError(typeof data.error === "string" ? data.error : "Could not add category.");
+      return null;
+    }
+
+    await onLookupsChanged();
+    return typeof data.id === "string" ? data.id : null;
+  }
+
+  async function handleCategorySelect(value: string) {
+    if (value !== ADD_CATEGORY_VALUE) {
+      setCategoryId(value);
+      return;
+    }
+
+    const newId = await createCategory();
+    if (!newId) return;
+    setCategoryId(newId);
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -378,7 +480,9 @@ function TransactionModal({
             <select
               required
               value={accountId}
-              onChange={(e) => setAccountId(e.target.value)}
+              onChange={(e) => {
+                void handleAccountSelect(e.target.value, "from");
+              }}
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"
             >
               {accounts.map((a) => (
@@ -386,6 +490,9 @@ function TransactionModal({
                   {a.name}
                 </option>
               ))}
+              <option value={ADD_ACCOUNT_VALUE}>
+                {addingAccount ? "Adding account..." : "+ Add new account"}
+              </option>
             </select>
           </label>
           {type === "TRANSFER" ? (
@@ -394,7 +501,9 @@ function TransactionModal({
               <select
                 required
                 value={toAccountId}
-                onChange={(e) => setToAccountId(e.target.value)}
+                onChange={(e) => {
+                  void handleAccountSelect(e.target.value, "to");
+                }}
                 className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"
               >
                 <option value="">Select…</option>
@@ -403,6 +512,9 @@ function TransactionModal({
                     {a.name}
                   </option>
                 ))}
+                <option value={ADD_ACCOUNT_VALUE}>
+                  {addingAccount ? "Adding account..." : "+ Add new account"}
+                </option>
               </select>
             </label>
           ) : (
@@ -410,7 +522,9 @@ function TransactionModal({
               <span className="font-medium">Category</span>
               <select
                 value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
+                onChange={(e) => {
+                  void handleCategorySelect(e.target.value);
+                }}
                 className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"
               >
                 <option value="">Uncategorized</option>
@@ -419,6 +533,9 @@ function TransactionModal({
                     {c.name}
                   </option>
                 ))}
+                <option value={ADD_CATEGORY_VALUE}>
+                  {addingCategory ? "Adding category..." : "+ Add new category"}
+                </option>
               </select>
             </label>
           )}
