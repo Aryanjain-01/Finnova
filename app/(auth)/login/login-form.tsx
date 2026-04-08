@@ -4,6 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { Button } from "@/components/ui/button";
+import {
+  CheckCircleIcon,
+  AlertTriangleIcon,
+  SparklesIcon,
+} from "@/components/ui/icons";
 
 export function LoginForm() {
   const searchParams = useSearchParams();
@@ -37,54 +43,148 @@ export function LoginForm() {
   }
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
-      <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-        Welcome back. Enter your credentials to continue.
+    <div className="anim-fade-up">
+      {/* Mobile-only brand mark (the split-screen hides the left hero on md-) */}
+      <div className="mb-8 flex items-center gap-3 md:hidden">
+        <div className="h-10 w-10 rounded-xl gradient-primary grid place-items-center shadow-[var(--shadow-glow)]">
+          <SparklesIcon className="h-5 w-5 text-white" />
+        </div>
+        <div className="text-xl font-extrabold gradient-text">Finnova</div>
+      </div>
+
+      <h1 className="text-4xl font-black tracking-tight gradient-text">
+        Welcome back
+      </h1>
+      <p className="mt-3 text-sm text-muted-foreground">
+        Sign in to pick up where you left off.
       </p>
+
       {registered ? (
-        <p className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
-          Account created. You can sign in now.
-        </p>
+        <div
+          role="status"
+          className="mt-6 flex items-start gap-3 rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm text-success anim-scale-in"
+        >
+          <CheckCircleIcon className="h-5 w-5 shrink-0" />
+          <div>
+            <div className="font-semibold">Account created</div>
+            <div className="text-xs text-success/80">
+              You can sign in with your new credentials now.
+            </div>
+          </div>
+        </div>
       ) : null}
-      <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-zinc-700 dark:text-zinc-200">Email</span>
-          <input
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 outline-none ring-emerald-600 focus:ring-2 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-          />
+
+      <form onSubmit={onSubmit} className="mt-8 flex flex-col gap-5">
+        <label className="flex flex-col gap-2 text-sm">
+          <span className="font-semibold text-foreground">Email</span>
+          <div className="relative">
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+            >
+              <EmailGlyph />
+            </span>
+            <input
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full rounded-xl border border-border bg-surface pl-11 pr-4 py-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+            />
+          </div>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-zinc-700 dark:text-zinc-200">Password</span>
-          <input
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 outline-none ring-emerald-600 focus:ring-2 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-          />
+
+        <label className="flex flex-col gap-2 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-foreground">Password</span>
+          </div>
+          <div className="relative">
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+            >
+              <LockGlyph />
+            </span>
+            <input
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full rounded-xl border border-border bg-surface pl-11 pr-4 py-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+            />
+          </div>
         </label>
-        {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
-        <button
+
+        {error ? (
+          <div
+            role="alert"
+            className="flex items-start gap-3 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+          >
+            <AlertTriangleIcon className="h-5 w-5 shrink-0" />
+            <span>{error}</span>
+          </div>
+        ) : null}
+
+        <Button
           type="submit"
-          disabled={loading}
-          className="rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+          variant="primary"
+          size="lg"
+          loading={loading}
+          className="w-full justify-center"
         >
           {loading ? "Signing in…" : "Sign in"}
-        </button>
+        </Button>
       </form>
-      <p className="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
+
+      <p className="mt-8 text-center text-sm text-muted-foreground">
         No account?{" "}
-        <Link href="/register" className="font-medium text-emerald-700 hover:underline dark:text-emerald-400">
+        <Link
+          href="/register"
+          className="font-semibold text-primary hover:underline"
+        >
           Create one
         </Link>
       </p>
     </div>
+  );
+}
+
+function EmailGlyph() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 7 9 6 9-6" />
+    </svg>
+  );
+}
+
+function LockGlyph() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </svg>
   );
 }

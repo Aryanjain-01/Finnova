@@ -1,16 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
+import { useTheme } from "@/components/theme-provider";
+import {
+  DownloadIcon,
+  MoonIcon,
+  RepeatIcon,
+  SettingsIcon,
+  ShieldIcon,
+  SunIcon,
+} from "@/components/ui/icons";
 
 export function SettingsPanel() {
   const fixedCurrency = "INR";
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [currency, setCurrency] = useState(fixedCurrency);
+  const [currency] = useState(fixedCurrency);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [profileMsg, setProfileMsg] = useState<string | null>(null);
-  const [pwdMsg, setPwdMsg] = useState<string | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingPwd, setSavingPwd] = useState(false);
+  const [runningRecurring, setRunningRecurring] = useState(false);
+  const { toast } = useToast();
+  const { theme, setTheme, resolvedTheme } = useTheme();
 
   useEffect(() => {
     void (async () => {
@@ -19,30 +34,30 @@ export function SettingsPanel() {
       if (res.ok) {
         setEmail(data.email ?? "");
         setName(data.name ?? "");
-        setCurrency(fixedCurrency);
       }
     })();
-  }, [fixedCurrency]);
+  }, []);
 
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
-    setProfileMsg(null);
+    setSavingProfile(true);
     const res = await fetch("/api/user", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({ name, currency: fixedCurrency }),
     });
+    setSavingProfile(false);
     if (!res.ok) {
-      setProfileMsg("Could not update profile.");
+      toast({ title: "Couldn't update profile", variant: "error" });
       return;
     }
-    setProfileMsg("Profile saved.");
+    toast({ title: "Profile saved", variant: "success" });
   }
 
   async function changePassword(e: React.FormEvent) {
     e.preventDefault();
-    setPwdMsg(null);
+    setSavingPwd(true);
     const res = await fetch("/api/user/password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -50,89 +65,153 @@ export function SettingsPanel() {
       body: JSON.stringify({ currentPassword, newPassword }),
     });
     const data = await res.json().catch(() => ({}));
+    setSavingPwd(false);
     if (!res.ok) {
-      setPwdMsg(typeof data.error === "string" ? data.error : "Could not change password.");
+      toast({
+        title: "Couldn't change password",
+        description: typeof data.error === "string" ? data.error : undefined,
+        variant: "error",
+      });
       return;
     }
     setCurrentPassword("");
     setNewPassword("");
-    setPwdMsg("Password updated.");
+    toast({ title: "Password updated", variant: "success" });
   }
 
-  return (
-    <div className="max-w-xl space-y-10">
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-        <h2 className="text-lg font-semibold">Profile</h2>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Email cannot be changed here.</p>
-        <form onSubmit={saveProfile} className="mt-4 flex flex-col gap-4">
-          <label className="text-sm">
-            <span className="font-medium">Email</span>
-            <input
-              readOnly
-              value={email}
-              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400"
-            />
-          </label>
-          <label className="text-sm">
-            <span className="font-medium">Name</span>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"
-            />
-          </label>
-          <label className="text-sm">
-            <span className="font-medium">Default currency (ISO code)</span>
-            <input
-              value={currency}
-              readOnly
-              maxLength={3}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 uppercase dark:border-zinc-700 dark:bg-zinc-950"
-            />
-          </label>
-          {profileMsg ? <p className="text-sm text-zinc-600">{profileMsg}</p> : null}
-          <button
-            type="submit"
-            className="w-fit rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-          >
-            Save profile
-          </button>
-        </form>
-      </section>
+  async function runRecurring() {
+    setRunningRecurring(true);
+    const res = await fetch("/api/recurring/run", { method: "POST", credentials: "include" });
+    const data = await res.json().catch(() => ({}));
+    setRunningRecurring(false);
+    if (!res.ok) {
+      toast({ title: "Couldn't run recurring", variant: "error" });
+      return;
+    }
+    toast({
+      title: `Posted ${data.ranCount ?? 0} transaction${data.ranCount === 1 ? "" : "s"}`,
+      variant: "success",
+    });
+  }
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-        <h2 className="text-lg font-semibold">Change password</h2>
-        <form onSubmit={changePassword} className="mt-4 flex flex-col gap-4">
-          <label className="text-sm">
-            <span className="font-medium">Current password</span>
-            <input
-              type="password"
-              required
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"
-            />
-          </label>
-          <label className="text-sm">
-            <span className="font-medium">New password</span>
-            <input
-              type="password"
-              required
-              minLength={8}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"
-            />
-          </label>
-          {pwdMsg ? <p className="text-sm text-zinc-600">{pwdMsg}</p> : null}
-          <button
-            type="submit"
-            className="w-fit rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
-          >
-            Update password
-          </button>
-        </form>
-      </section>
+  const inputCls =
+    "h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm text-foreground focus:border-primary";
+  const labelCls = "text-xs font-semibold uppercase tracking-wider text-muted-foreground";
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-3">
+      <div className="space-y-6 lg:col-span-2">
+        <Card icon={<SettingsIcon className="h-5 w-5" />} title="Profile" subtitle="Your basic account info">
+          <form onSubmit={saveProfile} className="space-y-4">
+            <div>
+              <label className={labelCls}>Email</label>
+              <input readOnly value={email} className={`mt-2 ${inputCls} bg-muted`} />
+              <div className="mt-1 text-xs text-muted-foreground">Email can't be changed here.</div>
+            </div>
+            <div>
+              <label className={labelCls}>Name</label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={`mt-2 ${inputCls}`}
+                placeholder="How should we call you?"
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Default currency</label>
+              <input readOnly value={currency} className={`mt-2 ${inputCls} bg-muted uppercase`} />
+            </div>
+            <div>
+              <Button type="submit" variant="primary" loading={savingProfile}>
+                Save profile
+              </Button>
+            </div>
+          </form>
+        </Card>
+
+        <Card icon={<ShieldIcon className="h-5 w-5" />} title="Change password" subtitle="Keep your account secure">
+          <form onSubmit={changePassword} className="space-y-4">
+            <div>
+              <label className={labelCls}>Current password</label>
+              <input
+                type="password"
+                required
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className={`mt-2 ${inputCls}`}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>New password</label>
+              <input
+                type="password"
+                required
+                minLength={8}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className={`mt-2 ${inputCls}`}
+              />
+              <div className="mt-1 text-xs text-muted-foreground">At least 8 characters.</div>
+            </div>
+            <div>
+              <Button type="submit" variant="primary" loading={savingPwd}>
+                Update password
+              </Button>
+            </div>
+          </form>
+        </Card>
+      </div>
+
+      <div className="space-y-6">
+        <Card
+          icon={resolvedTheme === "dark" ? <MoonIcon className="h-5 w-5" /> : <SunIcon className="h-5 w-5" />}
+          title="Appearance"
+          subtitle="Choose how Finnova feels"
+        >
+          <div className="flex gap-2">
+            {(["light", "dark", "system"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTheme(t)}
+                className={`flex-1 rounded-xl border px-3 py-2 text-sm font-semibold capitalize transition ${
+                  theme === t
+                    ? "border-primary bg-primary-soft text-primary"
+                    : "border-border text-muted-foreground hover:bg-surface-strong"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </Card>
+
+        <Card icon={<RepeatIcon className="h-5 w-5" />} title="Automation" subtitle="Post due recurring transactions">
+          <p className="text-sm text-muted-foreground">
+            Running this now will post any recurring transactions whose next date has arrived.
+          </p>
+          <div className="mt-4">
+            <Button onClick={runRecurring} loading={runningRecurring} variant="primary">
+              Run now
+            </Button>
+          </div>
+        </Card>
+
+        <Card icon={<DownloadIcon className="h-5 w-5" />} title="Export" subtitle="Download your data">
+          <p className="text-sm text-muted-foreground">
+            Get a CSV of every transaction you've ever logged.
+          </p>
+          <div className="mt-4">
+            <Button
+              variant="secondary"
+              onClick={() => window.open("/api/transactions/export", "_blank")}
+              leftIcon={<DownloadIcon className="h-4 w-4" />}
+            >
+              Download CSV
+            </Button>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }

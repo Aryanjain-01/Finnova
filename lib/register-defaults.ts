@@ -21,5 +21,16 @@ export async function seedDefaultsForUser(userId: string) {
     ],
   });
 
+  await prisma.savingsGoal.create({
+    data: {
+      userId,
+      name: "Emergency fund",
+      targetAmount: 100000,
+      currentAmount: 0,
+      color: "#10b981",
+      icon: "shield",
+    },
+  });
+
   return cash;
 }

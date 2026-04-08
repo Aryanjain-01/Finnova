@@ -82,3 +82,46 @@ export const profileUpdateSchema = z.object({
   name: z.string().max(120).optional().nullable(),
   currency: z.string().length(3).optional(),
 });
+
+export const savingsGoalCreateSchema = z.object({
+  name: z.string().min(1).max(120),
+  targetAmount: z.coerce.number().positive().max(1e12),
+  currentAmount: z.coerce.number().min(0).max(1e12).optional(),
+  deadline: z.coerce.date().optional().nullable(),
+  color: z.string().max(32).optional(),
+  icon: z.string().max(64).optional(),
+});
+
+export const savingsGoalUpdateSchema = z.object({
+  name: z.string().min(1).max(120).optional(),
+  targetAmount: z.coerce.number().positive().max(1e12).optional(),
+  currentAmount: z.coerce.number().min(0).max(1e12).optional(),
+  deadline: z.coerce.date().optional().nullable(),
+  color: z.string().max(32).optional(),
+  icon: z.string().max(64).optional(),
+  contribute: z.coerce.number().max(1e12).optional(),
+});
+
+export const recurringCreateSchema = z.object({
+  accountId: z.string().min(1),
+  categoryId: z.string().optional().nullable(),
+  amount: z.coerce.number().positive().max(1e12),
+  type: z.enum(["INCOME", "EXPENSE"]),
+  frequency: z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date().optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
+  active: z.boolean().optional(),
+});
+
+export const recurringUpdateSchema = z.object({
+  accountId: z.string().min(1).optional(),
+  categoryId: z.string().optional().nullable(),
+  amount: z.coerce.number().positive().max(1e12).optional(),
+  type: z.enum(["INCOME", "EXPENSE"]).optional(),
+  frequency: z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]).optional(),
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
+  active: z.boolean().optional(),
+});
