@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       userId: r.userId,
       name: parsed.data.name,
       type: parsed.data.type,
-      currency: parsed.data.currency ?? "USD",
+      currency: parsed.data.currency ?? "INR",
     },
   });
 

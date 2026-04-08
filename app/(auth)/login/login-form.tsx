@@ -26,7 +26,11 @@ export function LoginForm() {
     });
     setLoading(false);
     if (res?.error) {
-      setError("Invalid email or password.");
+      setError(
+        res.code === "database_unavailable"
+          ? "Can't connect to the database. Start PostgreSQL or check DATABASE_URL in .env."
+          : "Invalid email or password."
+      );
       return;
     }
     window.location.href = callbackUrl;
@@ -66,7 +70,7 @@ export function LoginForm() {
             className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 outline-none ring-emerald-600 focus:ring-2 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
           />
         </label>
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
         <button
           type="submit"
           disabled={loading}

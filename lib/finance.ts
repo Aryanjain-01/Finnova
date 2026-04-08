@@ -83,8 +83,9 @@ export async function categoryBreakdown(
 export async function monthlyTrends(
   userId: string,
   monthsBack: number,
+  referenceDate?: Date,
 ): Promise<{ key: string; year: number; month: number; income: number; expense: number }[]> {
-  const now = new Date();
+  const anchor = referenceDate ?? new Date();
   const results: {
     key: string;
     year: number;
@@ -94,7 +95,7 @@ export async function monthlyTrends(
   }[] = [];
 
   for (let i = monthsBack - 1; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const d = new Date(anchor.getFullYear(), anchor.getMonth() - i, 1);
     const y = d.getFullYear();
     const m = d.getMonth() + 1;
     const { start, end } = monthBounds(y, m);
@@ -110,6 +111,6 @@ export async function monthlyTrends(
   return results;
 }
 
-export function formatMoney(amount: number, currency = "USD") {
+export function formatMoney(amount: number, currency = "INR") {
   return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount);
 }

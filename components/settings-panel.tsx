@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 
 export function SettingsPanel() {
+  const fixedCurrency = "INR";
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState(fixedCurrency);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [profileMsg, setProfileMsg] = useState<string | null>(null);
@@ -18,10 +19,10 @@ export function SettingsPanel() {
       if (res.ok) {
         setEmail(data.email ?? "");
         setName(data.name ?? "");
-        setCurrency(data.currency ?? "USD");
+        setCurrency(fixedCurrency);
       }
     })();
-  }, []);
+  }, [fixedCurrency]);
 
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
@@ -30,7 +31,7 @@ export function SettingsPanel() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ name, currency }),
+      body: JSON.stringify({ name, currency: fixedCurrency }),
     });
     if (!res.ok) {
       setProfileMsg("Could not update profile.");
@@ -84,7 +85,7 @@ export function SettingsPanel() {
             <span className="font-medium">Default currency (ISO code)</span>
             <input
               value={currency}
-              onChange={(e) => setCurrency(e.target.value.toUpperCase().slice(0, 3))}
+              readOnly
               maxLength={3}
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 uppercase dark:border-zinc-700 dark:bg-zinc-950"
             />
