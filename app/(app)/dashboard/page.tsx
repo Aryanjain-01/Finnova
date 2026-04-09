@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import {
   categoryBreakdown,
   computeAccountBalances,
@@ -51,6 +52,21 @@ function insightAccent(kind: string) {
   return "default" as const;
 }
 
+async function safeGoalsQuery(userId: string) {
+  try {
+    return await prisma.savingsGoal.findMany({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+      take: 3,
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+      return [];
+    }
+    throw error;
+  }
+}
+
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
@@ -72,7 +88,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     periodTotals(userId, start, end),
     categoryBreakdown(userId, start, end),
     monthlyTrends(userId, 12, new Date(year, month - 1, 1)),
-    prisma.savingsGoal.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, take: 3 }),
+    safeGoalsQuery(userId),
     computeAccountBalances(userId),
   ]);
 
