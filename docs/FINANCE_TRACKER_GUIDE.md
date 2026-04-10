@@ -1,196 +1,185 @@
-## Finance Tracker
+# Finnova — Project Overview
 
-A full-stack personal finance app built with Next.js, Prisma, and PostgreSQL.
+A full-stack personal finance tracker built with Next.js 16, React 19, Prisma, and PostgreSQL.
 
-If you are a beginner, start here:
+---
 
-1. [Beginner Guide](docs/BEGINNER_GUIDE.md)
-2. [How The App Works](docs/HOW_IT_WORKS.md)
-3. [Request Flow (Step-by-Step)](docs/REQUEST_FLOW.md)
+## What it does
 
-## Getting Started
+Finnova lets a single user track their personal finances:
 
-Install dependencies and run the dev server:
+- **Accounts** — cash, bank, card, other
+- **Categories** — income or expense labels
+- **Transactions** — income, expense, or transfer between accounts
+- **Budgets** — monthly spending limits per category
+- **Savings Goals** — target + progress tracking
+- **Recurring Transactions** — rent, salary, subscriptions that run on a schedule
+- **Dashboard** — totals, charts, category breakdowns, monthly trends, auto-generated insights, savings rate, and net worth
+
+---
+
+## Tech stack
+
+| Layer | Choice | Why |
+|---|---|---|
+| Framework | Next.js 16 (App Router) | Server + client components in one project, great DX |
+| UI | React 19 + TypeScript | Type safety end-to-end |
+| Styling | Tailwind CSS v4 | Utility classes, dark mode via CSS variables |
+| Backend | Next.js Route Handlers | No separate backend service needed |
+| DB | PostgreSQL | Solid relational store for financial data |
+| ORM | Prisma 6 | Type-safe queries generated from schema |
+| Auth | NextAuth v5 (Credentials) | Email/password with bcrypt + JWT sessions |
+| Validation | Zod | One schema for input validation + TypeScript types |
+| Charts | Recharts | Composable React charts |
+
+---
+
+## Prerequisites
+
+- **Node.js** 20 or newer
+- **PostgreSQL** 14+ running locally (or via `docker compose up -d`)
+- **npm** (bundled with Node.js)
+
+---
+
+## Getting started
 
 ```bash
+# 1. Install dependencies
 npm install
+
+# 2. Copy the env template and fill in values
+cp .env.example .env
+# Edit .env and set DATABASE_URL and AUTH_SECRET
+
+# 3. Create the database tables
+npx prisma migrate dev
+
+# 4. (Optional) Seed sample data
+npx prisma db seed
+
+# 5. Start the dev server
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3000`. You'll be redirected to `/login`. Register a user, then log in.
 
-## Main Tech Stack
+### Environment variables
 
-- Next.js + React + TypeScript
-- Tailwind CSS
-- NextAuth (Credentials login)
-- Prisma ORM
-- PostgreSQL
-- Zod validation
-- Recharts
+The essentials (see `.env.example` for the full list):
 
-## Useful Scripts
+```
+DATABASE_URL="postgresql://user:password@localhost:5432/finnova"
+AUTH_SECRET="<generate with: openssl rand -base64 32>"
+```
 
-- `npm run dev` -> start local development server
-- `npm run lint` -> run lint checks
-- `npm run build` -> production build
-# Beginner Guide
+### Using Docker for Postgres
 
-This guide explains your app in very simple terms.
+```bash
+docker compose up -d          # starts Postgres on localhost:5432
+```
 
-## What this app does
+The `docker-compose.yml` at the repo root has the config. Stop with `docker compose down`.
 
-You can:
-- Create accounts (Cash, Bank, Card, etc.)
-- Create categories (Food, Transport, Salary, etc.)
-- Add transactions (Income, Expense, Transfer)
-- Set budgets
-- View dashboard charts and summaries
+---
 
-## Big picture (easy version)
+## Scripts
 
-1. Frontend (what you see): pages and forms in Next.js/React
-2. Backend (what runs on server): API routes in `app/api/*`
-3. Database: PostgreSQL
-4. Prisma: talks to database using TypeScript
-5. Auth: login/session using NextAuth
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start Next.js in dev mode with hot reload |
+| `npm run build` | Production build |
+| `npm start` | Run the production build |
+| `npm run lint` | Run ESLint |
+| `npx prisma migrate dev` | Apply pending migrations + regenerate Prisma client |
+| `npx prisma studio` | Open a GUI to browse the DB |
+| `npx prisma db seed` | Run `prisma/seed.ts` to populate sample data |
 
-## Important folders
+---
 
-- `app/(app)/*` -> protected pages (dashboard, transactions, accounts, budgets, settings)
-- `app/api/*` -> backend API endpoints
-- `components/*` -> reusable UI pieces
-- `lib/*` -> helper logic and validation
-- `prisma/schema.prisma` -> database schema (tables/models)
+## Where things live (short version)
 
-## How data flows
+```
+app/(app)/         → protected pages (dashboard, transactions, ...)
+app/(auth)/        → login + register
+app/api/           → backend endpoints
+components/        → React components
+components/ui/     → small reusable atoms
+lib/               → shared logic (Prisma, auth, validation, math)
+prisma/            → schema + migrations
+auth.ts            → NextAuth config
+middleware.ts      → route guard
+```
 
-When you submit a form:
-1. React form sends request to an API route
-2. API validates data with Zod
-3. API checks logged-in user
-4. API saves/reads with Prisma
-5. API returns JSON
-6. UI updates list/table/chart
+See [CODEBASE_EXPLAINED.md](CODEBASE_EXPLAINED.md) for the full tour.
 
-## How authentication works
+---
 
-- Login uses email + password (credentials provider)
-- Passwords are hashed with `bcryptjs`
-- Session is managed by NextAuth (JWT strategy)
-- Protected routes require a valid session
+## Documentation
 
-## What to learn next (in order)
+If you're new to the project (or new to web dev in general), read these in order:
 
-1. Read `docs/HOW_IT_WORKS.md`
-2. Open one API route and follow it end-to-end
-3. Open `prisma/schema.prisma` and understand each model
-4. Add one small feature (example: new field in Transaction)
-# How The App Works
+1. **[START_HERE.md](START_HERE.md)** — the roadmap
+2. **[REACT_BASICS_FOR_THIS_PROJECT.md](REACT_BASICS_FOR_THIS_PROJECT.md)** — React concepts with real examples from this repo
+3. **[HOW_IT_WORKS.md](HOW_IT_WORKS.md)** — the six layers of the app
+4. **[CODEBASE_EXPLAINED.md](CODEBASE_EXPLAINED.md)** — file-by-file tour
+5. **[REQUEST_FLOW.md](REQUEST_FLOW.md)** — three real request flows traced step by step
+6. **[EDGE_CASES_AND_RULES.md](EDGE_CASES_AND_RULES.md)** — every business rule and where it's enforced
+7. **[GIT_FOR_FIRST_PROJECT.md](GIT_FOR_FIRST_PROJECT.md)** — Git from scratch
+8. **[BEGINNER_GUIDE.md](BEGINNER_GUIDE.md)** — one-page cheat sheet
 
-This file explains each layer of the project.
+---
 
-## 1. Frontend layer
+## Architectural principles
 
-- Built with Next.js App Router + React
-- UI components live in `components/*`
-- Protected pages live in `app/(app)/*`
-- Auth pages live in `app/(auth)/*`
+A few ideas the code lives by. Follow them when you contribute.
 
-Examples:
-- `components/transactions-panel.tsx` -> transaction table + modal form
-- `components/accounts-panel.tsx` -> account management UI
+### 1. The server is the source of truth
 
-## 2. API/backend layer
+The client is a convenience. Every validation rule, ownership check, and business constraint is enforced **server-side** precisely because a malicious user can write their own client.
 
-API endpoints are in `app/api/*`.
+### 2. Every query is scoped by `userId`
 
-Examples:
-- `app/api/transactions/route.ts` -> create/list transactions
-- `app/api/accounts/route.ts` -> create/list accounts
-- `app/api/categories/route.ts` -> create/list categories
+Look at any Prisma call in `app/api/*`. It includes `userId: r.userId` in the `where` clause. This is the single most important security invariant in the app. Breaking it would let User A see (or modify) User B's data.
 
-Each route usually does:
-1. Check user session (`requireUserId`)
-2. Parse request body
-3. Validate with Zod (`lib/validations.ts`)
-4. Run Prisma query
-5. Return JSON response
+### 3. Validation lives in one place
 
-## 3. Database layer
+All Zod schemas live in `lib/validations.ts`. If you need to validate something, add it there — don't sprinkle one-off checks into routes.
 
-- Prisma schema is in `prisma/schema.prisma`
-- Database is PostgreSQL
-- Main models: `User`, `Account`, `Category`, `Transaction`, `Budget`
+### 4. Business math lives in `lib/finance.ts`
 
-Relationships:
-- One user has many accounts/categories/transactions/budgets
-- Transaction belongs to one source account
-- Transfer transaction can also point to `toAccount`
-- Budget links to category + month/year
+Pure functions that take a `userId` and return data. No HTTP, no session, no UI. This lets the dashboard page, API routes, and insights all share the same calculations.
 
-## 4. Authentication layer
+### 5. Server components fetch, client components interact
 
-- Config in `auth.ts`
-- Uses NextAuth Credentials provider
-- Password compare with `bcryptjs`
-- Session strategy: JWT
+Pages in `app/(app)/*/page.tsx` are server components by default. They fetch data via Prisma directly. They hand off to client components (marked `"use client"`) only for the interactive bits — modals, filters, forms.
 
-## 5. Validation layer
+### 6. Money is `Decimal(14, 2)`, never `Float`
 
-- Zod schemas in `lib/validations.ts`
-- Prevents invalid data from entering DB
+Floats lose precision. Decimals don't. The Prisma schema enforces this at the DB level.
 
-Example checks:
-- Transfer must have `toAccountId`
-- Transfer cannot move to same account
-- Amount must be positive
+### 7. Defense in depth on auth
 
-## 6. Styling layer
+Authentication is checked in **three** places:
+- `middleware.ts` — global page guard
+- Server pages — `await auth()` as a second check
+- API routes — `requireUserId()` at the top of every handler
 
-- Tailwind CSS v4 + global styles in `app/globals.css`
-- Shared structure from `components/app-shell.tsx`
+Each layer catches what the others miss.
 
-## 7. Charts and analytics
+---
 
-- Recharts used for dashboard charts
-- Finance calculations/helpers in `lib/finance.ts`
-# Request Flow (Step-by-Step)
+## Contributing
 
-Use this to understand one full cycle from UI to database.
+1. Create a feature branch: `git switch -c feat/my-thing`
+2. Make your changes, commit often with clear messages
+3. Run `npm run lint` and `npm run dev` to make sure nothing broke
+4. Push and open a PR against `main`
 
-## Example: Add an expense transaction
+See [GIT_FOR_FIRST_PROJECT.md](GIT_FOR_FIRST_PROJECT.md) for the full Git workflow.
 
-1. You open Transactions page.
-2. You click "Add transaction".
-3. Form in `components/transactions-panel.tsx` collects values.
-4. Form sends `POST /api/transactions`.
-5. `app/api/transactions/route.ts` receives request.
-6. It checks login with `requireUserId()`.
-7. It validates body using `transactionCreateSchema`.
-8. It writes record with Prisma.
-9. API returns success JSON.
-10. Frontend reloads transaction list and shows new row.
+---
 
-## Example: Dashboard load
+## License
 
-1. Page `app/(app)/dashboard/page.tsx` loads.
-2. Server fetches user + calculates totals.
-3. Helpers in `lib/finance.ts` compute trends and category breakdown.
-4. Page sends data to chart components.
-5. Recharts renders pie/line chart.
-
-## Error flow
-
-If something is wrong:
-- Invalid body -> API returns 400 + error details
-- Not logged in -> API returns 401
-- DB issue -> API returns 500 or auth-specific error path
-
-## How to debug quickly
-
-1. Check browser console + network tab
-2. Check terminal logs
-3. Confirm API response JSON
-4. Verify Zod schema and Prisma model match
-5. Verify database data
+Private project. Not yet open-sourced.
