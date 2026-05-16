@@ -22,6 +22,10 @@ import {
 type Tx = {
   id: string;
   amount: string;
+  splitEnabled: boolean;
+  splitTotalAmount: string | null;
+  splitParticipants: number | null;
+  splitPaidAmount: string | null;
   type: "INCOME" | "EXPENSE" | "TRANSFER";
   date: string;
   notes: string | null;
@@ -306,8 +310,18 @@ export function TransactionsPanel({ currency }: { currency: string }) {
                             : "text-foreground"
                       }`}
                     >
-                      {t.type === "EXPENSE" ? "−" : t.type === "INCOME" ? "+" : ""}
-                      {fmt(Number(t.amount))}
+                      <div>
+                        <span>
+                          {t.type === "EXPENSE" ? "−" : t.type === "INCOME" ? "+" : ""}
+                          {fmt(Number(t.amount))}
+                        </span>
+                        {t.type === "EXPENSE" && t.splitEnabled ? (
+                          <div className="text-xs font-medium text-muted-foreground">
+                            Split: {fmt(Number(t.splitTotalAmount ?? t.amount))} /{" "}
+                            {t.splitParticipants ?? 1} people
+                          </div>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="whitespace-nowrap px-5 py-3 text-foreground">
                       {t.account.name}
@@ -435,6 +449,16 @@ function TransactionModal({
   const [toAccountId, setToAccountId] = useState(initial?.toAccount?.id ?? "");
   const [categoryId, setCategoryId] = useState(initial?.category?.id ?? "");
   const [amount, setAmount] = useState(initial ? initial.amount : "");
+  const [splitEnabled, setSplitEnabled] = useState(initial?.splitEnabled ?? false);
+  const [splitTotalAmount, setSplitTotalAmount] = useState(
+    initial?.splitTotalAmount ?? initial?.amount ?? "",
+  );
+  const [splitParticipants, setSplitParticipants] = useState(
+    initial?.splitParticipants ? String(initial.splitParticipants) : "2",
+  );
+  const [splitPaidAmount, setSplitPaidAmount] = useState(
+    initial?.splitPaidAmount ?? initial?.splitTotalAmount ?? initial?.amount ?? "",
+  );
   const [date, setDate] = useState(
     initial ? initial.date.slice(0, 10) : new Date().toISOString().slice(0, 10),
   );
@@ -448,6 +472,12 @@ function TransactionModal({
   const filteredCategories = categories.filter((c) =>
     type === "INCOME" ? c.type === "INCOME" : type === "EXPENSE" ? c.type === "EXPENSE" : false,
   );
+  const modalFmt = (n: number) =>
+    new Intl.NumberFormat(undefined, { style: "currency", currency }).format(n);
+  const splitSharePreview =
+    splitEnabled && type === "EXPENSE" && Number(splitParticipants) >= 2 && Number(splitTotalAmount) > 0
+      ? Number(splitTotalAmount) / Number(splitParticipants)
+      : null;
 
   async function createAccount() {
     if (addingAccount) return null;
@@ -529,11 +559,25 @@ function TransactionModal({
     const body: Record<string, unknown> = {
       type,
       accountId,
-      amount: Number(amount),
+      amount:
+        splitEnabled && type === "EXPENSE" && splitSharePreview !== null
+          ? Number(splitSharePreview.toFixed(2))
+          : Number(amount),
       date: new Date(date).toISOString(),
       notes: notes || null,
       tags: tags || null,
     };
+    if (splitEnabled && type === "EXPENSE") {
+      body.splitEnabled = true;
+      body.splitTotalAmount = Number(splitTotalAmount);
+      body.splitParticipants = Number(splitParticipants);
+      body.splitPaidAmount = Number(splitPaidAmount || splitTotalAmount);
+    } else {
+      body.splitEnabled = false;
+      body.splitTotalAmount = null;
+      body.splitParticipants = null;
+      body.splitPaidAmount = null;
+    }
     if (type === "TRANSFER") {
       body.toAccountId = toAccountId;
       body.categoryId = null;
@@ -663,16 +707,81 @@ function TransactionModal({
             </select>
           </div>
         )}
+        {type === "EXPENSE" ? (
+          <div className="rounded-xl border border-border bg-surface-strong/40 p-3">
+            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <input
+                type="checkbox"
+                checked={splitEnabled}
+                onChange={(e) => setSplitEnabled(e.target.checked)}
+                className="h-4 w-4 rounded border-border"
+              />
+              Split this expense with friends
+            </label>
+            {splitEnabled ? (
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div>
+                  <label className={labelCls}>Total bill ({currency})</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    value={splitTotalAmount}
+                    onChange={(e) => setSplitTotalAmount(e.target.value)}
+                    className={inputCls2}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>People count</label>
+                  <input
+                    type="number"
+                    min="2"
+                    step="1"
+                    required
+                    value={splitParticipants}
+                    onChange={(e) => setSplitParticipants(e.target.value)}
+                    className={inputCls2}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>You paid ({currency})</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={splitPaidAmount}
+                    onChange={(e) => setSplitPaidAmount(e.target.value)}
+                    className={inputCls2}
+                  />
+                </div>
+              </div>
+            ) : null}
+            {splitEnabled && splitSharePreview !== null ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Your expense share will be{" "}
+                <span className="font-semibold text-foreground">{modalFmt(splitSharePreview)}</span>.
+                </p>
+              ) : null}
+          </div>
+        ) : null}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className={labelCls}>Amount ({currency})</label>
+            <label className={labelCls}>
+              {splitEnabled && type === "EXPENSE" ? "Your share (auto)" : `Amount (${currency})`}
+            </label>
             <input
               type="number"
               step="0.01"
               min="0"
               required
-              value={amount}
+              value={
+                splitEnabled && type === "EXPENSE" && splitSharePreview !== null
+                  ? splitSharePreview.toFixed(2)
+                  : amount
+              }
               onChange={(e) => setAmount(e.target.value)}
+              readOnly={splitEnabled && type === "EXPENSE"}
               className={inputCls2}
             />
           </div>

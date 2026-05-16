@@ -4,6 +4,20 @@ import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/api";
 import { transactionCreateSchema } from "@/lib/validations";
 
+function serializeTx(t: any) {
+  return {
+    ...t,
+    amount: t.amount.toString(),
+    splitTotalAmount: t.splitTotalAmount?.toString() ?? null,
+    splitPaidAmount: t.splitPaidAmount?.toString() ?? null,
+    account: { id: t.account.id, name: t.account.name },
+    toAccount: t.toAccount ? { id: t.toAccount.id, name: t.toAccount.name } : null,
+    category: t.category
+      ? { id: t.category.id, name: t.category.name, type: t.category.type }
+      : null,
+  };
+}
+
 export async function GET(req: Request) {
   const r = await requireUserId();
   if ("response" in r) return r.response;
@@ -59,15 +73,7 @@ export async function GET(req: Request) {
     page,
     pageSize,
     total,
-    items: rows.map((t) => ({
-      ...t,
-      amount: t.amount.toString(),
-      account: { id: t.account.id, name: t.account.name },
-      toAccount: t.toAccount ? { id: t.toAccount.id, name: t.toAccount.name } : null,
-      category: t.category
-        ? { id: t.category.id, name: t.category.name, type: t.category.type }
-        : null,
-    })),
+    items: rows.map((t) => serializeTx(t)),
   });
 }
 
@@ -122,8 +128,24 @@ export async function POST(req: Request) {
     }
   }
 
-  const created = await prisma.transaction.create({
-    data: {
+  const createData: any = {
+      ...(data.splitEnabled && data.type === "EXPENSE"
+        ? {
+            amount: new Prisma.Decimal(
+              Number(((data.splitTotalAmount ?? data.amount) / (data.splitParticipants ?? 1)).toFixed(2)),
+            ),
+            splitEnabled: true,
+            splitTotalAmount: new Prisma.Decimal(data.splitTotalAmount ?? data.amount),
+            splitParticipants: data.splitParticipants ?? 2,
+            splitPaidAmount: new Prisma.Decimal(data.splitPaidAmount ?? data.splitTotalAmount ?? data.amount),
+          }
+        : {
+            amount: new Prisma.Decimal(data.amount),
+            splitEnabled: false,
+            splitTotalAmount: null,
+            splitParticipants: null,
+            splitPaidAmount: null,
+          }),
       userId: r.userId,
       accountId: data.accountId,
       toAccountId: data.type === "TRANSFER" ? data.toAccountId : null,
@@ -131,28 +153,16 @@ export async function POST(req: Request) {
         data.type === "TRANSFER"
           ? null
           : data.categoryId ?? null,
-      amount: new Prisma.Decimal(data.amount),
       type: data.type,
       date: data.date,
       notes: data.notes ?? null,
       tags: data.tags ?? null,
-    },
+    };
+
+  const created = await prisma.transaction.create({
+    data: createData,
     include: { account: true, toAccount: true, category: true },
   });
 
-  return NextResponse.json({
-    ...created,
-    amount: created.amount.toString(),
-    account: { id: created.account.id, name: created.account.name },
-    toAccount: created.toAccount
-      ? { id: created.toAccount.id, name: created.toAccount.name }
-      : null,
-    category: created.category
-      ? {
-          id: created.category.id,
-          name: created.category.name,
-          type: created.category.type,
-        }
-      : null,
-  });
+  return NextResponse.json(serializeTx(created));
 }

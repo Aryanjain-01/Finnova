@@ -223,13 +223,13 @@ Open `http://localhost:3000` in your browser.
 
 Tick these off in order. If any fail, go to Troubleshooting.
 
-- [ ] `docker compose ps` shows the `db` service as running (or your local Postgres is up).
-- [ ] `npm run dev` prints `Ready` and a URL without errors.
-- [ ] Visiting `http://localhost:3000` redirects you to `/login`.
-- [ ] `/register` loads and you can create a new account.
-- [ ] After login, the dashboard loads (even if empty).
-- [ ] You can create an Account, a Category, and a Transaction without server errors.
-- [ ] `npx prisma studio` opens a DB browser and shows your user row in the `User` table.
+- [x] `docker compose ps` shows the `db` service as running (or your local Postgres is up).
+- [x] `npm run dev` prints `Ready` and a URL without errors.
+- [x] Visiting `http://localhost:3000` redirects you to `/login`.
+- [x] `/register` loads and you can create a new account.
+- [x] After login, the dashboard loads (even if empty).
+- [x] You can create an Account, a Category, and a Transaction without server errors.
+- [x] `npx prisma studio` opens a DB browser and shows your user row in the `User` table.
 
 ---
 

@@ -1,0 +1,201 @@
+{
+  "main": {
+    "id": "35d249988534edec",
+    "type": "split",
+    "children": [
+      {
+        "id": "8adc8f12e07ed73c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ad94b31daaeeddab",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "docs/GLOSSARY.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "GLOSSARY"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "003bb973bc1e81f4",
+    "type": "split",
+    "children": [
+      {
+        "id": "a0edce065b469072",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "8dbaf0b2ca55667b",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "e9334c70711dcbf2",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "29115b20c50c428d",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "10e2afc9ba367c7b",
+    "type": "split",
+    "children": [
+      {
+        "id": "4b80ba7e136e5328",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a5b8ac8680348191",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "e12095ddac643c13",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "9d22a509a0484896",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "7cd536f934e9c669",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "b8e4fe1ab1c17187",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "8dbaf0b2ca55667b",
+  "lastOpenFiles": [
+    "Untitled.md",
+    "Untitled 1.md",
+    "docs/GLOSSARY.md",
+    "docs/BEGINNER_GUIDE.md",
+    "docs/ABSOLUTE_BASICS.md",
+    "README.md",
+    "Untitled.base",
+    "2026-04-14.md",
+    "Untitled.canvas",
+    "docs/START_HERE.md",
+    "docs/TYPESCRIPT_ESSENTIALS.md",
+    "Untitled",
+    "prisma/migrations/20260411000000_add_split_expense_fields/migration.sql",
+    "prisma/migrations/20260411000000_add_split_expense_fields",
+    "docs/ENV_AND_SETUP.md"
+  ]
+}

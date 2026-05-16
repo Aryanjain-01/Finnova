@@ -18,19 +18,37 @@ export async function GET() {
     orderBy: { date: "desc" },
   });
 
-  const header = ["date", "type", "amount", "account", "toAccount", "category", "notes", "tags"];
+  const header = [
+    "date",
+    "type",
+    "amount",
+    "splitEnabled",
+    "splitTotalAmount",
+    "splitParticipants",
+    "splitPaidAmount",
+    "account",
+    "toAccount",
+    "category",
+    "notes",
+    "tags",
+  ];
   const lines: string[] = [header.join(",")];
 
   for (const t of rows) {
+    const tx = t as any;
     const row = [
-      new Date(t.date).toISOString().slice(0, 10),
-      t.type,
-      t.amount.toString(),
-      t.account.name,
-      t.toAccount?.name ?? "",
-      t.category?.name ?? "",
-      t.notes ?? "",
-      t.tags ?? "",
+      new Date(tx.date).toISOString().slice(0, 10),
+      tx.type,
+      tx.amount.toString(),
+      tx.splitEnabled ? "true" : "false",
+      tx.splitTotalAmount?.toString() ?? "",
+      tx.splitParticipants?.toString() ?? "",
+      tx.splitPaidAmount?.toString() ?? "",
+      tx.account.name,
+      tx.toAccount?.name ?? "",
+      tx.category?.name ?? "",
+      tx.notes ?? "",
+      tx.tags ?? "",
     ].map(csvEscape);
     lines.push(row.join(","));
   }

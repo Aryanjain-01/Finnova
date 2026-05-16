@@ -30,6 +30,10 @@ const transactionFields = z.object({
   toAccountId: z.string().optional().nullable(),
   categoryId: z.string().optional().nullable(),
   amount: z.coerce.number().positive().max(1e12),
+  splitEnabled: z.boolean().optional(),
+  splitTotalAmount: z.coerce.number().positive().max(1e12).optional().nullable(),
+  splitParticipants: z.coerce.number().int().min(2).max(100).optional().nullable(),
+  splitPaidAmount: z.coerce.number().positive().max(1e12).optional().nullable(),
   type: z.enum(["INCOME", "EXPENSE", "TRANSFER"]),
   date: z.coerce.date(),
   notes: z.string().max(2000).optional().nullable(),
@@ -53,6 +57,41 @@ export const transactionCreateSchema = transactionFields.superRefine((data, ctx)
       });
     }
   }
+
+  if (data.splitEnabled) {
+    if (data.type !== "EXPENSE") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Split is only supported for expenses",
+        path: ["splitEnabled"],
+      });
+    }
+    if (!data.splitTotalAmount) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "splitTotalAmount is required for split expenses",
+        path: ["splitTotalAmount"],
+      });
+    }
+    if (!data.splitParticipants) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "splitParticipants is required for split expenses",
+        path: ["splitParticipants"],
+      });
+    }
+    if (
+      data.splitPaidAmount &&
+      data.splitTotalAmount &&
+      data.splitPaidAmount > data.splitTotalAmount
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "splitPaidAmount cannot be greater than splitTotalAmount",
+        path: ["splitPaidAmount"],
+      });
+    }
+  }
 });
 
 export const transactionUpdateSchema = z.object({
@@ -60,10 +99,33 @@ export const transactionUpdateSchema = z.object({
   toAccountId: z.string().optional().nullable(),
   categoryId: z.string().optional().nullable(),
   amount: z.coerce.number().positive().max(1e12).optional(),
+  splitEnabled: z.boolean().optional(),
+  splitTotalAmount: z.coerce.number().positive().max(1e12).optional().nullable(),
+  splitParticipants: z.coerce.number().int().min(2).max(100).optional().nullable(),
+  splitPaidAmount: z.coerce.number().positive().max(1e12).optional().nullable(),
   type: z.enum(["INCOME", "EXPENSE", "TRANSFER"]).optional(),
   date: z.coerce.date().optional(),
   notes: z.string().max(2000).optional().nullable(),
   tags: z.string().max(500).optional().nullable(),
+}).superRefine((data, ctx) => {
+  if (data.splitEnabled === true && data.type && data.type !== "EXPENSE") {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Split is only supported for expenses",
+      path: ["splitEnabled"],
+    });
+  }
+  if (
+    data.splitTotalAmount &&
+    data.splitPaidAmount &&
+    data.splitPaidAmount > data.splitTotalAmount
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "splitPaidAmount cannot be greater than splitTotalAmount",
+      path: ["splitPaidAmount"],
+    });
+  }
 });
 
 export const budgetUpsertSchema = z.object({
