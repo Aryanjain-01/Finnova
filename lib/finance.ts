@@ -15,11 +15,16 @@ export async function computeAccountBalances(userId: string) {
   const balances = new Map<string, number>();
   for (const a of accounts) balances.set(a.id, 0);
   for (const t of txs) {
+    const tx = t as any;
     const amt = Number(t.amount);
     if (t.type === "INCOME") {
       balances.set(t.accountId, (balances.get(t.accountId) ?? 0) + amt);
     } else if (t.type === "EXPENSE") {
-      balances.set(t.accountId, (balances.get(t.accountId) ?? 0) - amt);
+      const cashOut =
+        tx.splitEnabled && tx.splitPaidAmount !== null && tx.splitPaidAmount !== undefined
+          ? Number(tx.splitPaidAmount)
+          : amt;
+      balances.set(t.accountId, (balances.get(t.accountId) ?? 0) - cashOut);
     } else if (t.type === "TRANSFER" && t.toAccountId) {
       balances.set(t.accountId, (balances.get(t.accountId) ?? 0) - amt);
       balances.set(t.toAccountId, (balances.get(t.toAccountId) ?? 0) + amt);

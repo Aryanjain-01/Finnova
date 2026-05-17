@@ -38,6 +38,8 @@ model User {
   categories   Category[]
   transactions Transaction[]
   budgets      Budget[]
+  savingsGoals SavingsGoal[]
+  recurring    RecurringTransaction[]
 }
 
 model Account {
@@ -53,6 +55,7 @@ model Account {
 
   transactions Transaction[] @relation("AccountTx")
   transfersIn  Transaction[] @relation("TransferIn")
+  recurring    RecurringTransaction[] @relation("RecurringAccount")
 }
 
 model Category {
@@ -68,6 +71,7 @@ model Category {
 
   transactions Transaction[]
   budgets      Budget[]
+  recurring    RecurringTransaction[]
 }
 
 model Transaction {
@@ -102,4 +106,45 @@ model Budget {
   updatedAt   DateTime @updatedAt
 
   @@unique([userId, categoryId, year, month])
+}
+
+enum RecurrenceFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+model SavingsGoal {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  targetAmount  Decimal   @db.Decimal(14, 2)
+  currentAmount Decimal   @db.Decimal(14, 2) @default(0)
+  deadline      DateTime?
+  color         String?
+  icon          String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model RecurringTransaction {
+  id          String              @id @default(cuid())
+  userId      String
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId   String
+  account     Account             @relation("RecurringAccount", fields: [accountId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  category    Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  amount      Decimal             @db.Decimal(14, 2)
+  type        TransactionTypeEnum
+  frequency   RecurrenceFrequency
+  startDate   DateTime
+  nextRunDate DateTime
+  endDate     DateTime?
+  notes       String?
+  active      Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
 }

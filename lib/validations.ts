@@ -30,6 +30,10 @@ const transactionFields = z.object({
   toAccountId: z.string().optional().nullable(),
   categoryId: z.string().optional().nullable(),
   amount: z.coerce.number().positive().max(1e12),
+  splitEnabled: z.boolean().optional(),
+  splitTotalAmount: z.coerce.number().positive().max(1e12).optional().nullable(),
+  splitParticipants: z.coerce.number().int().min(2).max(100).optional().nullable(),
+  splitPaidAmount: z.coerce.number().positive().max(1e12).optional().nullable(),
   type: z.enum(["INCOME", "EXPENSE", "TRANSFER"]),
   date: z.coerce.date(),
   notes: z.string().max(2000).optional().nullable(),
@@ -53,6 +57,41 @@ export const transactionCreateSchema = transactionFields.superRefine((data, ctx)
       });
     }
   }
+
+  if (data.splitEnabled) {
+    if (data.type !== "EXPENSE") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Split is only supported for expenses",
+        path: ["splitEnabled"],
+      });
+    }
+    if (!data.splitTotalAmount) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "splitTotalAmount is required for split expenses",
+        path: ["splitTotalAmount"],
+      });
+    }
+    if (!data.splitParticipants) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "splitParticipants is required for split expenses",
+        path: ["splitParticipants"],
+      });
+    }
+    if (
+      data.splitPaidAmount &&
+      data.splitTotalAmount &&
+      data.splitPaidAmount > data.splitTotalAmount
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "splitPaidAmount cannot be greater than splitTotalAmount",
+        path: ["splitPaidAmount"],
+      });
+    }
+  }
 });
 
 export const transactionUpdateSchema = z.object({
@@ -60,10 +99,33 @@ export const transactionUpdateSchema = z.object({
   toAccountId: z.string().optional().nullable(),
   categoryId: z.string().optional().nullable(),
   amount: z.coerce.number().positive().max(1e12).optional(),
+  splitEnabled: z.boolean().optional(),
+  splitTotalAmount: z.coerce.number().positive().max(1e12).optional().nullable(),
+  splitParticipants: z.coerce.number().int().min(2).max(100).optional().nullable(),
+  splitPaidAmount: z.coerce.number().positive().max(1e12).optional().nullable(),
   type: z.enum(["INCOME", "EXPENSE", "TRANSFER"]).optional(),
   date: z.coerce.date().optional(),
   notes: z.string().max(2000).optional().nullable(),
   tags: z.string().max(500).optional().nullable(),
+}).superRefine((data, ctx) => {
+  if (data.splitEnabled === true && data.type && data.type !== "EXPENSE") {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Split is only supported for expenses",
+      path: ["splitEnabled"],
+    });
+  }
+  if (
+    data.splitTotalAmount &&
+    data.splitPaidAmount &&
+    data.splitPaidAmount > data.splitTotalAmount
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "splitPaidAmount cannot be greater than splitTotalAmount",
+      path: ["splitPaidAmount"],
+    });
+  }
 });
 
 export const budgetUpsertSchema = z.object({
@@ -81,4 +143,47 @@ export const passwordChangeSchema = z.object({
 export const profileUpdateSchema = z.object({
   name: z.string().max(120).optional().nullable(),
   currency: z.string().length(3).optional(),
+});
+
+export const savingsGoalCreateSchema = z.object({
+  name: z.string().min(1).max(120),
+  targetAmount: z.coerce.number().positive().max(1e12),
+  currentAmount: z.coerce.number().min(0).max(1e12).optional(),
+  deadline: z.coerce.date().optional().nullable(),
+  color: z.string().max(32).optional(),
+  icon: z.string().max(64).optional(),
+});
+
+export const savingsGoalUpdateSchema = z.object({
+  name: z.string().min(1).max(120).optional(),
+  targetAmount: z.coerce.number().positive().max(1e12).optional(),
+  currentAmount: z.coerce.number().min(0).max(1e12).optional(),
+  deadline: z.coerce.date().optional().nullable(),
+  color: z.string().max(32).optional(),
+  icon: z.string().max(64).optional(),
+  contribute: z.coerce.number().max(1e12).optional(),
+});
+
+export const recurringCreateSchema = z.object({
+  accountId: z.string().min(1),
+  categoryId: z.string().optional().nullable(),
+  amount: z.coerce.number().positive().max(1e12),
+  type: z.enum(["INCOME", "EXPENSE"]),
+  frequency: z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date().optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
+  active: z.boolean().optional(),
+});
+
+export const recurringUpdateSchema = z.object({
+  accountId: z.string().min(1).optional(),
+  categoryId: z.string().optional().nullable(),
+  amount: z.coerce.number().positive().max(1e12).optional(),
+  type: z.enum(["INCOME", "EXPENSE"]).optional(),
+  frequency: z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]).optional(),
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
+  active: z.boolean().optional(),
 });
