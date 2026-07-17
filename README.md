@@ -28,6 +28,8 @@ npm run dev
 
 Open `http://localhost:3000` (or the next available port shown in terminal).
 
+Live app on Vercel: [finnova-oq1h.vercel.app](https://finnova-oq1h.vercel.app)
+
 ## Main Tech Stack
 
 - Next.js + React + TypeScript

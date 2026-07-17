@@ -20,11 +20,29 @@ export async function POST(req: Request) {
     );
   }
 
-  const { email, password, name } = parsed.data;
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const { email, password, name, otp } = parsed.data;
+  
+  // Check if email is already taken
+  const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
   if (existing) {
     return NextResponse.json({ error: "Email already registered" }, { status: 409 });
   }
+
+  // Verify OTP
+  const otpRecord = await prisma.oTP.findFirst({
+    where: {
+      email: email.toLowerCase(),
+      code: otp,
+      expiresAt: { gt: new Date() },
+    },
+  });
+
+  if (!otpRecord) {
+    return NextResponse.json({ error: "Invalid or expired login code (OTP)" }, { status: 400 });
+  }
+
+  // Delete OTP so it can't be reused
+  await prisma.oTP.delete({ where: { id: otpRecord.id } });
 
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({

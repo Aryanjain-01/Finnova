@@ -23,10 +23,14 @@ function isDatabaseConnectionError(e: unknown): boolean {
   return false;
 }
 
+import { seedDefaultsForUser } from "@/lib/register-defaults";
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
   providers: [
     Credentials({
+      id: "credentials",
+      name: "Password",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },

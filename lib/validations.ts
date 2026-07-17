@@ -4,6 +4,7 @@ export const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8, "Password must be at least 8 characters"),
   name: z.string().max(120).optional(),
+  otp: z.string().length(6, "OTP must be 6 digits"),
 });
 
 export const accountCreateSchema = z.object({
