@@ -44,7 +44,6 @@ export function LoginForm() {
 
   return (
     <div className="anim-fade-up">
-      {/* Mobile-only brand mark (the split-screen hides the left hero on md-) */}
       <div className="mb-8 flex items-center gap-3 md:hidden">
         <div className="h-10 w-10 rounded-xl gradient-primary grid place-items-center shadow-[var(--shadow-glow)]">
           <SparklesIcon className="h-5 w-5 text-white" />
