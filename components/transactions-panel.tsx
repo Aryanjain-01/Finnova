@@ -448,6 +448,12 @@ function TransactionModal({
   const [accountId, setAccountId] = useState(initial?.account.id ?? accounts[0]?.id ?? "");
   const [toAccountId, setToAccountId] = useState(initial?.toAccount?.id ?? "");
   const [categoryId, setCategoryId] = useState(initial?.category?.id ?? "");
+
+  // Fix: If accounts load after the modal is opened, ensure we select the first one by default
+  useEffect(() => {
+    if (!accountId && accounts.length > 0) setAccountId(accounts[0].id);
+  }, [accounts, accountId]);
+
   const [amount, setAmount] = useState(initial ? initial.amount : "");
   const [splitEnabled, setSplitEnabled] = useState(initial?.splitEnabled ?? false);
   const [splitTotalAmount, setSplitTotalAmount] = useState(
