@@ -90,6 +90,8 @@ export async function POST(req: Request) {
 
   const parsed = transactionCreateSchema.safeParse(body);
   if (!parsed.success) {
+    console.error("TRANSACTION VALIDATION FAILED:", JSON.stringify(parsed.error.flatten(), null, 2));
+    console.error("RECEIVED BODY:", JSON.stringify(body, null, 2));
     return NextResponse.json(
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 },
