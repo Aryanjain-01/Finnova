@@ -133,7 +133,7 @@ export async function PATCH(req: Request, { params }: Params) {
       ...(parsed.data.categoryId !== undefined
         ? {
             categoryId:
-              nextType === "TRANSFER" ? null : parsed.data.categoryId,
+              nextType === "TRANSFER" ? null : (parsed.data.categoryId || null),
           }
         : {}),
       amount: new Prisma.Decimal(

@@ -154,7 +154,7 @@ export async function POST(req: Request) {
       categoryId:
         data.type === "TRANSFER"
           ? null
-          : data.categoryId ?? null,
+          : data.categoryId || null,
       type: data.type,
       date: data.date,
       notes: data.notes ?? null,
