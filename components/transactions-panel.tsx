@@ -601,7 +601,14 @@ function TransactionModal({
     const data = await res.json().catch(() => ({}));
     setSaving(false);
     if (!res.ok) {
-      setError(typeof data.error === "string" ? data.error : "Could not save.");
+      if (data.details) {
+        const issues = Object.entries(data.details.fieldErrors)
+          .map(([field, errs]) => `${field}: ${(errs as string[]).join(", ")}`)
+          .join(" | ");
+        setError(`Validation failed: ${issues}`);
+      } else {
+        setError(typeof data.error === "string" ? data.error : "Could not save.");
+      }
       return;
     }
     onSaved();
