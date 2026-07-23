@@ -70,6 +70,9 @@ export async function PATCH(req: Request, { params }: Params) {
   }
   if (parsed.data.endDate !== undefined) data.endDate = parsed.data.endDate;
   if (parsed.data.notes !== undefined) data.notes = parsed.data.notes;
+  if (parsed.data.providerName !== undefined) data.providerName = parsed.data.providerName;
+  if (parsed.data.providerUrl !== undefined) data.providerUrl = parsed.data.providerUrl;
+  if (parsed.data.planDetails !== undefined) data.planDetails = parsed.data.planDetails;
   if (parsed.data.active !== undefined) data.active = parsed.data.active;
 
   const updated = await prisma.recurringTransaction.update({

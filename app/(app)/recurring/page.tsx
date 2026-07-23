@@ -15,8 +15,8 @@ export default async function RecurringPage() {
     <div>
       <PageHeader
         eyebrow="Automation"
-        title="Recurring"
-        description="Schedule income and expenses that repeat automatically on your chosen cadence."
+        title="Subscriptions & Bills"
+        description="Track and automate your subscriptions, utilities, and recurring expenses."
         icon={<RepeatIcon className="h-5 w-5" />}
       />
       <RecurringPanel currency={currency} />

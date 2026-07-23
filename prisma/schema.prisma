@@ -148,6 +148,9 @@ model RecurringTransaction {
   nextRunDate DateTime
   endDate     DateTime?
   notes       String?
+  providerName String?
+  providerUrl  String?
+  planDetails  String?
   active      Boolean             @default(true)
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
