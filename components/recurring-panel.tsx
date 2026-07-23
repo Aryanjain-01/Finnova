@@ -201,6 +201,7 @@ export function RecurringPanel({ currency }: { currency: string }) {
                     {r.planDetails && (
                       <Badge variant="outline" className="font-normal text-xs">{r.planDetails}</Badge>
                     )}
+                  </div>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <Badge variant="info" className="scale-90 origin-left">{r.frequency.toLowerCase()}</Badge>
                     {!r.active && <Badge variant="outline" className="scale-90 origin-left">paused</Badge>}
