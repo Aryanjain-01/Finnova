@@ -84,13 +84,17 @@ model Transaction {
   toAccount   Account?            @relation("TransferIn", fields: [toAccountId], references: [id], onDelete: SetNull)
   categoryId  String?
   category    Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  amount      Decimal             @db.Decimal(14, 2)
-  type        TransactionTypeEnum
-  date        DateTime
-  notes       String?
-  tags        String?
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  amount            Decimal             @db.Decimal(14, 2)
+  splitEnabled      Boolean?
+  splitTotalAmount  Decimal?            @db.Decimal(14, 2)
+  splitParticipants Int?
+  splitPaidAmount   Decimal?            @db.Decimal(14, 2)
+  type              TransactionTypeEnum
+  date              DateTime
+  notes             String?
+  tags              String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 }
 
 model Budget {
