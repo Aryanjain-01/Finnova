@@ -11,6 +11,7 @@ function serialize<
     amount: Prisma.Decimal;
     account: { id: string; name: string } | null;
     category: { id: string; name: string; type: string } | null;
+    subscriptionPlan?: { price: Prisma.Decimal | null } | null;
   },
 >(r: T) {
   return {
@@ -19,6 +20,12 @@ function serialize<
     account: r.account ? { id: r.account.id, name: r.account.name } : null,
     category: r.category
       ? { id: r.category.id, name: r.category.name, type: r.category.type }
+      : null,
+    subscriptionPlan: r.subscriptionPlan
+      ? {
+          ...r.subscriptionPlan,
+          price: r.subscriptionPlan.price?.toString() ?? null,
+        }
       : null,
   };
 }
@@ -73,12 +80,17 @@ export async function PATCH(req: Request, { params }: Params) {
   if (parsed.data.providerName !== undefined) data.providerName = parsed.data.providerName;
   if (parsed.data.providerUrl !== undefined) data.providerUrl = parsed.data.providerUrl;
   if (parsed.data.planDetails !== undefined) data.planDetails = parsed.data.planDetails;
+  if (parsed.data.subscriptionPlanId !== undefined) {
+    data.subscriptionPlan = parsed.data.subscriptionPlanId
+      ? { connect: { id: parsed.data.subscriptionPlanId } }
+      : { disconnect: true };
+  }
   if (parsed.data.active !== undefined) data.active = parsed.data.active;
 
   const updated = await prisma.recurringTransaction.update({
     where: { id },
     data,
-    include: { account: true, category: true },
+    include: { account: true, category: true, subscriptionPlan: { include: { service: true } } },
   });
 
   return NextResponse.json(serialize(updated));

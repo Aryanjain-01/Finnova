@@ -177,6 +177,7 @@ export const recurringCreateSchema = z.object({
   providerName: z.string().max(120).optional().nullable(),
   providerUrl: z.string().max(500).optional().nullable(),
   planDetails: z.string().max(500).optional().nullable(),
+  subscriptionPlanId: z.string().optional().nullable(),
   active: z.boolean().optional(),
 });
 
@@ -192,5 +193,6 @@ export const recurringUpdateSchema = z.object({
   providerName: z.string().max(120).optional().nullable(),
   providerUrl: z.string().max(500).optional().nullable(),
   planDetails: z.string().max(500).optional().nullable(),
+  subscriptionPlanId: z.string().optional().nullable(),
   active: z.boolean().optional(),
 });

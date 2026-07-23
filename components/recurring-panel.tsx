@@ -29,6 +29,7 @@ type Recurring = {
   providerName: string | null;
   providerUrl: string | null;
   planDetails: string | null;
+  subscriptionPlan: { id: string; name: string; price: string | null; service: { id: string; name: string; logoUrl: string | null } } | null;
   active: boolean;
   account: { id: string; name: string } | null;
   category: { id: string; name: string; type: string } | null;
@@ -36,6 +37,8 @@ type Recurring = {
 
 type AccountOpt = { id: string; name: string; type: string };
 type CategoryOpt = { id: string; name: string; type: string };
+type SubPlanOpt = { id: string; name: string; price: string | null };
+type SubServiceOpt = { id: string; name: string; logoUrl: string | null; plans: SubPlanOpt[] };
 
 const inputCls =
   "h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm text-foreground focus:border-primary";
@@ -46,6 +49,7 @@ export function RecurringPanel({ currency }: { currency: string }) {
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState<AccountOpt[]>([]);
   const [categories, setCategories] = useState<CategoryOpt[]>([]);
+  const [services, setServices] = useState<SubServiceOpt[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [running, setRunning] = useState(false);
   const { toast } = useToast();
@@ -55,16 +59,18 @@ export function RecurringPanel({ currency }: { currency: string }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [r, a, c] = await Promise.all([
+    const [r, a, c, s] = await Promise.all([
       fetch("/api/recurring", { credentials: "include" }),
       fetch("/api/accounts", { credentials: "include" }),
       fetch("/api/categories", { credentials: "include" }),
+      fetch("/api/subscription-services", { credentials: "include" }),
     ]);
-    const [rj, aj, cj] = await Promise.all([r.json(), a.json(), c.json()]);
+    const [rj, aj, cj, sj] = await Promise.all([r.json(), a.json(), c.json(), s.json()]);
     setLoading(false);
     if (r.ok) setItems(rj);
     if (a.ok) setAccounts(aj);
     if (c.ok) setCategories(cj);
+    if (s.ok) setServices(sj);
   }, []);
 
   useEffect(() => {
@@ -174,13 +180,13 @@ export function RecurringPanel({ currency }: { currency: string }) {
               <div className="flex items-center gap-4 min-w-0">
                 <div
                   className={`grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-surface-strong border border-border/50 shadow-sm ${
-                    !r.providerUrl && (r.type === "INCOME" ? "text-success" : "text-danger")
+                    !(r.subscriptionPlan?.service.logoUrl || r.providerUrl) && (r.type === "INCOME" ? "text-success" : "text-danger")
                   }`}
                 >
-                  {r.providerUrl ? (
+                  {(r.subscriptionPlan?.service.logoUrl || r.providerUrl) ? (
                     <img 
-                      src={`https://logo.clearbit.com/${r.providerUrl.replace(/^https?:\/\//, '')}`} 
-                      alt={r.providerName || "Service Logo"} 
+                      src={r.subscriptionPlan?.service.logoUrl || `https://logo.clearbit.com/${r.providerUrl!.replace(/^https?:\/\//, '')}`} 
+                      alt={r.subscriptionPlan?.service.name || r.providerName || "Service Logo"} 
                       className="h-full w-full object-cover"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
@@ -196,10 +202,10 @@ export function RecurringPanel({ currency }: { currency: string }) {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="text-base font-bold text-foreground">
-                      {r.providerName || r.notes || r.category?.name || `${r.type.toLowerCase()} schedule`}
+                      {r.subscriptionPlan?.service.name || r.providerName || r.notes || r.category?.name || `${r.type.toLowerCase()} schedule`}
                     </div>
-                    {r.planDetails && (
-                      <Badge variant="outline" className="font-normal text-xs">{r.planDetails}</Badge>
+                    {(r.subscriptionPlan?.name || r.planDetails) && (
+                      <Badge variant="outline" className="font-normal text-xs">{r.subscriptionPlan?.name || r.planDetails}</Badge>
                     )}
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -240,6 +246,7 @@ export function RecurringPanel({ currency }: { currency: string }) {
           currency={currency}
           accounts={accounts}
           categories={categories}
+          services={services}
           onClose={() => setModalOpen(false)}
           onSaved={() => {
             setModalOpen(false);
@@ -256,12 +263,14 @@ function RecurringModal({
   currency,
   accounts,
   categories,
+  services,
   onClose,
   onSaved,
 }: {
   currency: string;
   accounts: AccountOpt[];
   categories: CategoryOpt[];
+  services: SubServiceOpt[];
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -276,8 +285,13 @@ function RecurringModal({
   const [providerName, setProviderName] = useState("");
   const [providerUrl, setProviderUrl] = useState("");
   const [planDetails, setPlanDetails] = useState("");
+  const [subscriptionServiceId, setSubscriptionServiceId] = useState("");
+  const [subscriptionPlanId, setSubscriptionPlanId] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const selectedService = services.find((s) => s.id === subscriptionServiceId);
+  const selectedPlan = selectedService?.plans.find((p) => p.id === subscriptionPlanId);
 
   const filteredCategories = categories.filter((c) => c.type === type);
 
@@ -293,9 +307,10 @@ function RecurringModal({
       startDate: new Date(startDate).toISOString(),
       endDate: endDate ? new Date(endDate).toISOString() : null,
       notes: notes || null,
-      providerName: providerName || null,
-      providerUrl: providerUrl || null,
-      planDetails: planDetails || null,
+      providerName: subscriptionServiceId ? null : (providerName || null),
+      providerUrl: subscriptionServiceId ? null : (providerUrl || null),
+      planDetails: subscriptionServiceId ? null : (planDetails || null),
+      subscriptionPlanId: subscriptionPlanId || null,
     };
     const res = await fetch("/api/recurring", {
       method: "POST",
@@ -437,41 +452,60 @@ function RecurringModal({
             <div>
               <label className={labelCls}>Service Name</label>
               <input
+                list="services-list"
                 value={providerName}
-                onChange={(e) => setProviderName(e.target.value)}
+                onChange={(e) => {
+                  setProviderName(e.target.value);
+                  const matched = services.find(s => s.name.toLowerCase() === e.target.value.toLowerCase());
+                  setSubscriptionServiceId(matched ? matched.id : "");
+                  setSubscriptionPlanId(""); // reset plan on service change
+                }}
                 className={`mt-2 ${inputCls}`}
                 placeholder="e.g. Netflix"
               />
+              <datalist id="services-list">
+                {services.map(s => <option key={s.id} value={s.name} />)}
+              </datalist>
             </div>
-            <div>
-              <label className={labelCls}>Website URL (For Logo)</label>
-              <input
-                value={providerUrl}
-                onChange={(e) => setProviderUrl(e.target.value)}
-                className={`mt-2 ${inputCls}`}
-                placeholder="e.g. netflix.com"
-              />
-            </div>
+            
+            {subscriptionServiceId ? (
+              <div>
+                <label className={labelCls}>Plan Details</label>
+                <select
+                  value={subscriptionPlanId}
+                  onChange={(e) => {
+                    setSubscriptionPlanId(e.target.value);
+                    const plan = selectedService?.plans.find(p => p.id === e.target.value);
+                    if (plan?.price) setAmount(plan.price);
+                  }}
+                  className={`mt-2 ${inputCls}`}
+                >
+                  <option value="">Select a plan...</option>
+                  {selectedService?.plans.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} {p.price ? `(${currency}${p.price})` : ''}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div>
+                <label className={labelCls}>Custom Plan (Optional)</label>
+                <input
+                  value={planDetails}
+                  onChange={(e) => setPlanDetails(e.target.value)}
+                  className={`mt-2 ${inputCls}`}
+                  placeholder="e.g. Gym Membership"
+                />
+              </div>
+            )}
           </div>
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <div>
-              <label className={labelCls}>Plan Details</label>
-              <input
-                value={planDetails}
-                onChange={(e) => setPlanDetails(e.target.value)}
-                className={`mt-2 ${inputCls}`}
-                placeholder="e.g. Premium 4K"
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Internal Notes</label>
-              <input
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className={`mt-2 ${inputCls}`}
-                placeholder="e.g. Shared with John"
-              />
-            </div>
+          <div className="mb-3">
+            <label className={labelCls}>Internal Notes</label>
+            <input
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className={`mt-2 ${inputCls}`}
+              placeholder="Any other details..."
+            />
           </div>
         </div>
         

@@ -9,6 +9,7 @@ function serialize<
     amount: Prisma.Decimal;
     account: { id: string; name: string } | null;
     category: { id: string; name: string; type: string } | null;
+    subscriptionPlan?: { price: Prisma.Decimal | null } | null;
   },
 >(r: T) {
   return {
@@ -17,6 +18,12 @@ function serialize<
     account: r.account ? { id: r.account.id, name: r.account.name } : null,
     category: r.category
       ? { id: r.category.id, name: r.category.name, type: r.category.type }
+      : null,
+    subscriptionPlan: r.subscriptionPlan
+      ? {
+          ...r.subscriptionPlan,
+          price: r.subscriptionPlan.price?.toString() ?? null,
+        }
       : null,
   };
 }
@@ -27,7 +34,7 @@ export async function GET() {
 
   const rows = await prisma.recurringTransaction.findMany({
     where: { userId: r.userId },
-    include: { account: true, category: true },
+    include: { account: true, category: true, subscriptionPlan: { include: { service: true } } },
     orderBy: { nextRunDate: "asc" },
   });
 
@@ -86,9 +93,10 @@ export async function POST(req: Request) {
       providerName: parsed.data.providerName ?? null,
       providerUrl: parsed.data.providerUrl ?? null,
       planDetails: parsed.data.planDetails ?? null,
+      subscriptionPlanId: parsed.data.subscriptionPlanId ?? null,
       active: parsed.data.active ?? true,
     },
-    include: { account: true, category: true },
+    include: { account: true, category: true, subscriptionPlan: { include: { service: true } } },
   });
 
   return NextResponse.json(serialize(created));

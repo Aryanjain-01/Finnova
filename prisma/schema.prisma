@@ -151,9 +151,33 @@ model RecurringTransaction {
   providerName String?
   providerUrl  String?
   planDetails  String?
-  active      Boolean             @default(true)
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  active       Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  
+  subscriptionPlanId String?
+  subscriptionPlan   SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id], onDelete: SetNull)
+}
+
+model SubscriptionService {
+  id        String             @id @default(cuid())
+  name      String             @unique
+  url       String?
+  logoUrl   String?
+  plans     SubscriptionPlan[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+}
+
+model SubscriptionPlan {
+  id          String                 @id @default(cuid())
+  serviceId   String
+  service     SubscriptionService    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  name        String
+  price       Decimal?               @db.Decimal(14, 2)
+  transactions RecurringTransaction[]
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
 }
 
 model OTP {
