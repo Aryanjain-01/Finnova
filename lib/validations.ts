@@ -174,6 +174,9 @@ export const recurringCreateSchema = z.object({
   startDate: z.coerce.date(),
   endDate: z.coerce.date().optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
+  providerName: z.string().max(120).optional().nullable(),
+  providerUrl: z.string().max(500).optional().nullable(),
+  planDetails: z.string().max(500).optional().nullable(),
   active: z.boolean().optional(),
 });
 
@@ -186,5 +189,8 @@ export const recurringUpdateSchema = z.object({
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
+  providerName: z.string().max(120).optional().nullable(),
+  providerUrl: z.string().max(500).optional().nullable(),
+  planDetails: z.string().max(500).optional().nullable(),
   active: z.boolean().optional(),
 });

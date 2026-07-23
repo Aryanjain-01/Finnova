@@ -26,6 +26,9 @@ type Recurring = {
   nextRunDate: string;
   endDate: string | null;
   notes: string | null;
+  providerName: string | null;
+  providerUrl: string | null;
+  planDetails: string | null;
   active: boolean;
   account: { id: string; name: string } | null;
   category: { id: string; name: string; type: string } | null;
@@ -170,11 +173,21 @@ export function RecurringPanel({ currency }: { currency: string }) {
             >
               <div className="flex items-center gap-4 min-w-0">
                 <div
-                  className={`grid h-12 w-12 place-items-center rounded-xl ${
-                    r.type === "INCOME" ? "bg-success/15 text-success" : "bg-danger/15 text-danger"
+                  className={`grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-surface-strong border border-border/50 shadow-sm ${
+                    !r.providerUrl && (r.type === "INCOME" ? "text-success" : "text-danger")
                   }`}
                 >
-                  {r.type === "INCOME" ? (
+                  {r.providerUrl ? (
+                    <img 
+                      src={`https://logo.clearbit.com/${r.providerUrl.replace(/^https?:\/\//, '')}`} 
+                      alt={r.providerName || "Service Logo"} 
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
+                        (e.target as HTMLImageElement).className = "h-5 w-5 text-muted-foreground";
+                      }}
+                    />
+                  ) : r.type === "INCOME" ? (
                     <ArrowUpIcon className="h-5 w-5" />
                   ) : (
                     <ArrowDownIcon className="h-5 w-5" />
@@ -182,19 +195,24 @@ export function RecurringPanel({ currency }: { currency: string }) {
                 </div>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-base font-semibold text-foreground">
-                      {r.notes || r.category?.name || `${r.type.toLowerCase()} schedule`}
+                    <div className="text-base font-bold text-foreground">
+                      {r.providerName || r.notes || r.category?.name || `${r.type.toLowerCase()} schedule`}
                     </div>
-                    <Badge variant="info">{r.frequency.toLowerCase()}</Badge>
-                    {!r.active && <Badge variant="outline">paused</Badge>}
-                  </div>
+                    {r.planDetails && (
+                      <Badge variant="outline" className="font-normal text-xs">{r.planDetails}</Badge>
+                    )}
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <Badge variant="info" className="scale-90 origin-left">{r.frequency.toLowerCase()}</Badge>
+                    {!r.active && <Badge variant="outline" className="scale-90 origin-left">paused</Badge>}
                     <span>{r.account?.name}</span>
                     {r.category && <span>· {r.category.name}</span>}
-                    <span className="flex items-center gap-1">
-                      <CalendarIcon className="h-3 w-3" />
-                      next {new Date(r.nextRunDate).toLocaleDateString()}
-                    </span>
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-foreground/80">
+                    <CalendarIcon className="h-3.5 w-3.5 text-primary" />
+                    Auto-pay: {new Date(r.nextRunDate).toLocaleDateString()}
+                    {r.endDate && (
+                      <span className="text-muted-foreground ml-1">(Ends {new Date(r.endDate).toLocaleDateString()})</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -254,6 +272,9 @@ function RecurringModal({
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [endDate, setEndDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [providerName, setProviderName] = useState("");
+  const [providerUrl, setProviderUrl] = useState("");
+  const [planDetails, setPlanDetails] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -271,6 +292,9 @@ function RecurringModal({
       startDate: new Date(startDate).toISOString(),
       endDate: endDate ? new Date(endDate).toISOString() : null,
       notes: notes || null,
+      providerName: providerName || null,
+      providerUrl: providerUrl || null,
+      planDetails: planDetails || null,
     };
     const res = await fetch("/api/recurring", {
       method: "POST",
@@ -405,15 +429,51 @@ function RecurringModal({
             />
           </div>
         </div>
-        <div>
-          <label className={labelCls}>Notes</label>
-          <input
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className={`mt-2 ${inputCls}`}
-            placeholder="e.g. Netflix subscription"
-          />
+        
+        <div className="pt-2 border-t border-border mt-2">
+          <div className="text-sm font-semibold mb-3">Service Details (Optional)</div>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className={labelCls}>Service Name</label>
+              <input
+                value={providerName}
+                onChange={(e) => setProviderName(e.target.value)}
+                className={`mt-2 ${inputCls}`}
+                placeholder="e.g. Netflix"
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Website URL (For Logo)</label>
+              <input
+                value={providerUrl}
+                onChange={(e) => setProviderUrl(e.target.value)}
+                className={`mt-2 ${inputCls}`}
+                placeholder="e.g. netflix.com"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className={labelCls}>Plan Details</label>
+              <input
+                value={planDetails}
+                onChange={(e) => setPlanDetails(e.target.value)}
+                className={`mt-2 ${inputCls}`}
+                placeholder="e.g. Premium 4K"
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Internal Notes</label>
+              <input
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className={`mt-2 ${inputCls}`}
+                placeholder="e.g. Shared with John"
+              />
+            </div>
+          </div>
         </div>
+        
         {error && <p className="text-sm text-danger">{error}</p>}
       </form>
     </Modal>
