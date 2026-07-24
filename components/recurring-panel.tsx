@@ -185,7 +185,7 @@ export function RecurringPanel({ currency }: { currency: string }) {
                 >
                   {(r.subscriptionPlan?.service.logoUrl || r.providerUrl) ? (
                     <img 
-                      src={r.subscriptionPlan?.service.logoUrl || `https://logo.clearbit.com/${r.providerUrl!.replace(/^https?:\/\//, '')}`} 
+                      src={r.subscriptionPlan?.service.logoUrl || `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${r.providerUrl!.replace(/^https?:\/\//, '')}&size=128`} 
                       alt={r.subscriptionPlan?.service.name || r.providerName || "Service Logo"} 
                       className="h-full w-full object-cover"
                       onError={(e) => {
